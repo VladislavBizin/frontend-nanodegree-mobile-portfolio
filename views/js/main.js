@@ -402,18 +402,20 @@ var pizzaElementGenerator = function(i) {
 var resizePizzas = function(size) {
   window.performance.mark("mark_start_resize");   // User Timing API function
 
+
+  const pizzaSize = document.getElementById("pizzaSize");
   // Changes the value for the size of the pizza above the slider
   function changeSliderLabel(size) {
     switch(size) {
       case "1":
-        document.querySelector("#pizzaSize").innerHTML = "Small";
-        return;
+        pizzaSize.innerHTML = "Small";
+        break;
       case "2":
-        document.querySelector("#pizzaSize").innerHTML = "Medium";
-        return;
+        pizzaSize.innerHTML = "Medium";
+        break;
       case "3":
-        document.querySelector("#pizzaSize").innerHTML = "Large";
-        return;
+        pizzaSize.innerHTML = "Large";
+        break;
       default:
         console.log("bug in changeSliderLabel");
     }
@@ -423,9 +425,9 @@ var resizePizzas = function(size) {
 
    // Returns the size difference to change a pizza element from one size to another. Called by changePizzaSlices(size).
   function determineDx (elem, size) {
-    var oldWidth = elem.offsetWidth;
-    var windowWidth = document.querySelector("#randomPizzas").offsetWidth;
-    var oldSize = oldWidth / windowWidth;
+    const oldWidth = elem.offsetWidth;
+    const windowWidth = document.getElementById("#randomPizzas").offsetWidth;
+    const oldSize = oldWidth / windowWidth;
 
     // Changes the slider value to a percent width
     function sizeSwitcher (size) {
@@ -441,18 +443,24 @@ var resizePizzas = function(size) {
       }
     }
 
-    var newSize = sizeSwitcher(size);
-    var dx = (newSize - oldSize) * windowWidth;
+    const newSize = sizeSwitcher(size);
 
-    return dx;
+    return (newSize - oldSize) * windowWidth;
   }
 
   // Iterates through pizza elements on the page and changes their widths
   function changePizzaSizes(size) {
-    for (var i = 0; i < document.querySelectorAll(".randomPizzaContainer").length; i++) {
-      var dx = determineDx(document.querySelectorAll(".randomPizzaContainer")[i], size);
-      var newwidth = (document.querySelectorAll(".randomPizzaContainer")[i].offsetWidth + dx) + 'px';
-      document.querySelectorAll(".randomPizzaContainer")[i].style.width = newwidth;
+    // moved all calculations outside the for loop
+    //
+    const randomPizzaContainer = document.getElementsByClassName("randomPizzaContainer");
+    const length = randomPizzaContainer.length;
+    const dx = determineDx(randomPizzaContainer[0], size);
+    const newWidth = (randomPizzaContainer[0].offsetWidth + dx) + 'px';
+
+    for (let i = 0; i < length ; i++) {
+      setTimeout(()=>{
+        randomPizzaContainer[i].style.width = newWidth;
+      },0)
     }
   }
 
@@ -468,8 +476,8 @@ var resizePizzas = function(size) {
 window.performance.mark("mark_start_generating"); // collect timing data
 
 // This for-loop actually creates and appends all of the pizzas when the page loads
-for (var i = 2; i < 100; i++) {
-  var pizzasDiv = document.getElementById("randomPizzas");
+const pizzasDiv = document.getElementById("randomPizzas");
+for (let i = 2; i < 100; i++) {
   pizzasDiv.appendChild(pizzaElementGenerator(i));
 }
 
@@ -500,13 +508,15 @@ function logAverageFrame(times) {   // times is the array of User Timing measure
 function updatePositions() {
   frame++;
   window.performance.mark("mark_start_frame");
+  const helper = (elem, index) => {
+    let phase = Math.sin((scrollTop / 1250) + (index % 5));
+    elem.style.left = elem.basicLeft + 100 * phase + 'px';
+  };
 
-  var items = document.querySelectorAll('.mover');
-  for (var i = 0; i < items.length; i++) {
-    // document.body.scrollTop is no longer supported in Chrome.
-    var scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
-    var phase = Math.sin((scrollTop / 1250) + (i % 5));
-    items[i].style.left = items[i].basicLeft + 100 * phase + 'px';
+  const items = document.getElementsByClassName("mover");
+  let scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+  for (let i = 0; i < items.length; i++) {
+    setTimeout(helper,0,items[i],i);
   }
 
   // User Timing API to the rescue again. Seriously, it's worth learning.
@@ -526,15 +536,24 @@ window.addEventListener('scroll', updatePositions);
 document.addEventListener('DOMContentLoaded', function() {
   var cols = 8;
   var s = 256;
-  for (var i = 0; i < 200; i++) {
-    var elem = document.createElement('img');
+
+  let movingPizzas1 = document.querySelector("#movingPizzas1");
+
+  const helper = (index) => {
+    let elem = document.createElement('img');
     elem.className = 'mover';
     elem.src = "images/pizza.png";
     elem.style.height = "100px";
     elem.style.width = "73.333px";
-    elem.basicLeft = (i % cols) * s;
-    elem.style.top = (Math.floor(i / cols) * s) + 'px';
-    document.querySelector("#movingPizzas1").appendChild(elem);
+    elem.basicLeft = (index % cols) * s;
+    elem.style.top = (Math.floor(index / cols) * s) + 'px';
+    movingPizzas1.appendChild(elem);
+  };
+
+
+  for (let i = 0; i < 200; i++) {
+    setTimeout(helper,0,i)
   }
   updatePositions();
 });
+
